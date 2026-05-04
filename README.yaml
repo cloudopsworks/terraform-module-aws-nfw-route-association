@@ -1,5 +1,13 @@
-name: Terraform Transit Gateway Module
+name: Terraform AWS Network Firewall Route Association Module
 #logo: logo/logo.jpg
+
+badges:
+  - name: Latest Release
+    image: https://img.shields.io/github/release/cloudopsworks/terraform-module-aws-nfw-route-association.svg?style=for-the-badge
+    url: https://github.com/cloudopsworks/terraform-module-aws-nfw-route-association/releases/latest
+  - name: Last Updated
+    image: https://img.shields.io/github/last-commit/cloudopsworks/terraform-module-aws-nfw-route-association.svg?style=for-the-badge
+    url: https://github.com/cloudopsworks/terraform-module-aws-nfw-route-association/commits
 
 license: "APACHE2"
 
@@ -8,23 +16,82 @@ copyrights:
     url: "https://cloudops.works"
     year: "2024"
 
-github_repo: cloudopsworks/terraform-module-aws-vpc-setup
+github_repo: cloudopsworks/terraform-module-aws-nfw-route-association
 
 description: |-
-  VPC Module for setting up transit gateway with ResourceAccessMananger support.
+  AWS Terraform module that associates route table entries with AWS Network Firewall VPC endpoints for the supplied endpoint subnets and firewall sync states.
 
-# Introduction to the project
-#introduction: |-
-#  This is an introduction.
+introduction: |-
+  This module resolves the route table attached to each supplied endpoint subnet and creates an `aws_route` entry that points traffic to the AWS Network Firewall-managed VPC endpoint in the matching Availability Zone.
 
-# How to use this project
-#usage: |-
+  Use it when you already have an AWS Network Firewall deployed and need deterministic route propagation from endpoint subnets to the correct firewall endpoint IDs.
 
-# Example usage
-#examples: |-
+usage: |-
+  Bootstrap a deployment directory with Terragrunt scaffold:
 
-# How to get started quickly
-#quickstart: |-
+  ```sh
+  # 1. Create and enter the target deployment directory
+  mkdir -p <environment>/<region>/<spoke>/nfw-route-association
+  cd <environment>/<region>/<spoke>/nfw-route-association
+
+  # 2. Scaffold the module
+  terragrunt scaffold github.com/cloudopsworks/terraform-module-aws-nfw-route-association
+
+  # 3. Edit the generated inputs file
+  vi inputs.yaml
+
+  # 4. Review and apply
+  terragrunt plan
+  terragrunt apply
+  ```
+
+  Example `inputs.yaml` for the generated deployment folder:
+
+  ```yaml
+  endpoint_subnet_ids:
+    - "subnet-0123456789abcdef0" # (Required) Subnet ID for the endpoint AZ.
+    - "subnet-0fedcba9876543210" # (Required) Subnet ID for another endpoint AZ.
+
+  endpoint_destination_cidr: "0.0.0.0/0" # (Optional) Destination CIDR routed through the firewall endpoint. Default: 0.0.0.0/0.
+
+  nfw_states_list:
+    - availability_zone: "us-east-1a" # (Required) Must match the AZ of one endpoint subnet.
+      attachment:
+        - endpoint_id: "vpce-0123456789abcdef0" # (Required) Firewall endpoint ID for us-east-1a.
+    - availability_zone: "us-east-1b" # (Required) Must match the AZ of one endpoint subnet.
+      attachment:
+        - endpoint_id: "vpce-0fedcba9876543210" # (Required) Firewall endpoint ID for us-east-1b.
+  ```
+
+  Example `terragrunt.hcl` wiring generated values into the module:
+
+  ```hcl
+  terraform {
+    source = "github.com/cloudopsworks/terraform-module-aws-nfw-route-association?ref=v1.0.1"
+  }
+
+  locals {
+    local_vars = yamldecode(file("${get_terragrunt_dir()}/inputs.yaml"))
+  }
+
+  inputs = {
+    endpoint_subnet_ids       = local.local_vars.endpoint_subnet_ids
+    endpoint_destination_cidr = local.local_vars.endpoint_destination_cidr
+    nfw_states_list           = local.local_vars.nfw_states_list
+  }
+  ```
+
+examples: |-
+  Typical use cases:
+
+  - Centralized egress VPCs where private subnet traffic must traverse AWS Network Firewall endpoints.
+  - Shared-services network topologies where firewall endpoint IDs are obtained from another Terragrunt stack or remote state.
+  - Multi-AZ deployments where each endpoint subnet must map to the firewall endpoint in the same Availability Zone.
+
+quickstart: |-
+  1. Collect the endpoint subnet IDs for the route tables you want to update.
+  2. Extract the firewall sync states, including each `availability_zone` and `attachment[].endpoint_id`, from the AWS Network Firewall deployment.
+  3. Fill in `inputs.yaml` and run `terragrunt apply`.
 
 include:
   - "docs/targets.md"
