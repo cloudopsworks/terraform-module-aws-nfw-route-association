@@ -1,0 +1,16 @@
+# Module-specific inputs for terragrunt scaffold output.
+# Variables supplied by the hierarchy/template engine and intentionally omitted here:
+# - is_hub
+# - spoke_def
+# - org
+# - extra_tags
+
+endpoint_subnet_ids:
+  - "subnet-0123456789abcdef0" # (Required) Subnet IDs where AWS Network Firewall endpoint ENIs are present. Use one subnet per availability zone that should receive a managed route.
+
+endpoint_destination_cidr: "0.0.0.0/0" # (Optional) Destination CIDR to route through the firewall endpoints. Default: 0.0.0.0/0.
+
+nfw_states_list:
+  - availability_zone: "us-east-1a" # (Required) Availability Zone for this Network Firewall sync state. Must match one of the subnet AZs in endpoint_subnet_ids.
+    attachment:
+      - endpoint_id: "vpce-0123456789abcdef0" # (Required) VPC endpoint ID created by AWS Network Firewall for this AZ. Common source: firewall_status[0].sync_states[*].attachment[*].endpoint_id.
