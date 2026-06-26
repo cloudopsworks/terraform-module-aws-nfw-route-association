@@ -22,6 +22,41 @@ variables:
     default: {}
     confirm: true
   # End - Generic Boilerplate Variables Setup
+  - name: nfw_dependency_enabled
+    order: 2
+    description: "Enable NFW Module dependency"
+    type: bool
+    default: true
+    confirm: true
+  - name: nfw_dependency_path
+    order: 3
+    description: "Path to NFW Module, required if nfw_dependency_enabled is true"
+    type: string
+    default: "../nfw"
+    confirm: true
+  - name: vpc_dependency_enabled
+    order: 4
+    description: "Enable VPC Module dependency"
+    type: bool
+    default: true
+    confirm: true
+  - name: vpc_dependency_path
+    order: 5
+    description: "Path to VPC Module, required if vpc_dependency_enabled is true"
+    type: string
+    default: "../vpc"
+    confirm: true
+  - name: vpc_dependency_subnets
+    order: 6
+    description: "VPC Subnets scope, required if vpc_dependency_enabled is true, options: intra, private, database, both(database,private), none"
+    type: enum
+    default: intra
+    options:
+      - intra
+      - private
+      - both
+      - none
+    confirm: true
 
 hooks:
   after:
